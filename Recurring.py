@@ -15,8 +15,8 @@ class Transaction:
 
    def __init__(self, Parent, Line=None):
       self._Parent = Parent
-      self._Date = None     # Date String.
-      self._Dis = None      # Date in Seconds (since epoch).
+      self._DateStr = None     # Date String.
+      self._DateObject = None      # Date in datetime.date format
       self._Ds = None       # Actual Date Separator.
       self._Period = None   # Period String.
       self._Al = []         # Additional Lines (after date).
@@ -24,7 +24,7 @@ class Transaction:
 
    def __repr__(self):
       return Misc.Repr('Date=%r,Dis=%r,Ds=%r,Period=%r,Al=%r' %\
-       (self._Date, self._Dis, self._Ds, self._Period, self._Al), self)
+       (self._DateStr, self._DateObject, self._Ds, self._Period, self._Al), self)
 
    def __str__(self):
       """As a string, including the period."""
@@ -37,7 +37,7 @@ class Transaction:
    def _DateLine(self, ExcludePeriod=False):
       """The Date line."""
       Pt = '' if ExcludePeriod else '%s(%s)' % (self._Ds, self._Period)
-      return '%s%s%s' % (self._Date, Pt, self._Al[0])
+      return '%s%s%s' % (self._DateStr, Pt, self._Al[0])
 
    def _RemainderLines(self, ExcludeEmpty=False):
       Rv = ''
@@ -50,7 +50,7 @@ class Transaction:
       return Rv
 
    def __nonzero__(self):
-      return self._Date is not None
+      return self._DateStr is not None
 
    def _Log(self, Msg): Misc.Log(Msg, self)
    def _Throw(self, Msg): Misc.Throw(Msg, self)
@@ -59,8 +59,8 @@ class Transaction:
       self.__init__(self._Parent)
       Match = re.match(self._ReTxStart, Line)
       if Match:
-         self._Date = Match.group(1)
-         self._Dis = Time.DateTimeParse(self._Date)
+         self._DateStr = Match.group(1)
+         self._DateObject = Time.DateStrtoDatetime(self._DateStr)
          self._Ds = Match.group(2)
          self._Period = Match.group(3)
          Dlen = len(Match.group(0))
@@ -82,41 +82,41 @@ class Transaction:
          ensure it is separated by an empty line on output.
       """
       Rv = []
-      Tdis = self._Parent._Tdis
+      TargetDateObject = self._Parent._TargetDateObject
       Done = False
       while not Done:
-         if self._Dis > Tdis: Done = True
+         if self._DateObject > TargetDateObject: Done = True
          else:
             # Append transaction text.
             Rv.append('\n' + self.TransactionText())
 
             # Evaluate next posting date.
-            NewDis = Time.DateAddPeriod(self._Dis, self._Period)
-            if NewDis <= self._Dis:
+            NewDateObject = Time.DateAddPeriod(self._DateObject, self._Period)
+            if NewDateObject <= self._DateObject:
                _Throw("Period is negative or zero!")
-            self._Dis = NewDis
-            self._Date = Time.DateToText(self._Dis)
+            self._DateObject = NewDateObject
+            self._DateStr = Time.DateToText(self._DateObject)
       return Rv
        
 class Transactions:
    def __init__\
    (self,
     LedgerFileName=None,
-    TargetDateInSeconds=None,
+    TargetDatetimeObject=None,
     ConfigFileName=None):
       self._Lfn = LedgerFileName
       self._Cfn = ConfigFileName
-      self._Tdis = TargetDateInSeconds
-      if self._Tdis is None:
-         self._Tdis = Time.DateToday()
+      self._TargetDateObject = TargetDatetimeObject
+      if self._TargetDateObject is None:
+         self._TargetDateObject = Time.DateToday()
       self._Nrt = 0            # No of Recurring Transactions.
       self._Preamble = ''
       self._Rtl = []           # Recurring Transaction List.
       self._ReadConfig()
 
    def __repr__(self):
-      return Misc.Repr('Lfn=%r,Cfn=%r,Tdis=%r,Nrt=%r,Preamble=%r,Rtl=%r' %\
-       (self._Lfn, self._Cfn, self._Tdis, self._Nrt, self._Preamble,
+      return Misc.Repr('Lfn=%r,Cfn=%r,TargetDateObject=%r,Nrt=%r,Preamble=%r,Rtl=%r' %\
+       (self._Lfn, self._Cfn, self._TargetDateObject, self._Nrt, self._Preamble,
         self._Rtl), self)
 
    def __str__(self):
@@ -175,9 +175,9 @@ class Transactions:
 def main(Argv=None):
    if Argv is None: Argv = sys.argv
    Lfn = None if len(Argv) < 1 else Argv[0]
-   Tdis = None if len(Argv) < 2 else Time.DateTimeParse(Argv[1])
+   TargetDateObject = None if len(Argv) < 2 else Time.DateStrtoDatetime(Argv[1])
    Cfn = None if len(Argv) < 3 else Argv[2]
-   Rts = Transactions(Lfn, Tdis, Cfn)
+   Rts = Transactions(Lfn, TargetDateObject, Cfn)
    Rts.Post()
    return 0
 
