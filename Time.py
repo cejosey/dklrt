@@ -11,7 +11,7 @@ ReDateSep = '[-/]'
 ReDate = '\d{4}%s\d{1,2}%s\d{1,2}' % (ReDateSep, ReDateSep)
 RePeriod = '(\d+)([ymwdh])'
 
-DateFormat = '%Y-%m-%d'
+DateFormat = '%Y/%m/%d'
 
 ReDateTimeSep = "[-/: ]";
 DateTimeFormat = '%Y%m%d%H%M%S'
