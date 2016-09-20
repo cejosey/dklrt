@@ -4,7 +4,9 @@
 import sys, re
 import time
 import datetime
+import datetime
 import Misc
+from dateutil.relativedelta import relativedelta
 
 ModuleName = __name__
 ReDateSep = '[-/]'
@@ -31,9 +33,8 @@ def DateStrtoDatetime(DateString):
     year = int(DateString[0:4])
     month = int(DateString[5:7])
     day = int(DateString[8:10])
-    DatetimeObject = datetime.date(year, month, day)
-    return DatetimeObject
-
+    return datetime.date(year, month, day)
+    
 def DateAddPeriod(DatetimeObject, Periodstr):
    """Adds the period to the Seconds (a date)."""
    Match = re.match(RePeriod, Periodstr)
@@ -41,9 +42,9 @@ def DateAddPeriod(DatetimeObject, Periodstr):
    Count = int(Match.group(1))
    Unit = Match.group(2)
 
-   if Unit == 'y': Rv = DatetimeObject + datetime.timedelta(years = Count)
-   elif Unit== 'm': Rv = DatetimeObject + datetime.timedelta(months = Count)
-   elif Unit == 'w': Rv = DatetimeObject + datetime.timedelta(weeks = Count)
-   elif Unit == 'd': Rv = DatetimeObject + datetime.timedelta(days = Count)
+   if Unit == 'y': Rv = DatetimeObject + relativedelta(years = +Count)
+   elif Unit== 'm': Rv = DatetimeObject + relativedelta(months = +Count)
+   elif Unit == 'w': Rv = DatetimeObject + relativedelta(weeks = +Count)
+   elif Unit == 'd': Rv = DatetimeObject + relativedelta(days = +Count)
    else: _Throw('Bad Period Unit: "%s"!' % Unit)
    return Rv
